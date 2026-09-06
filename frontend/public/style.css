@@ -41,9 +41,9 @@ body {
        text input opts back in below. */
     -webkit-user-select: none;
     user-select: none;
-    /* Drag the window by its background. Interactive controls opt out with
-       --wails-draggable: no-drag (the property inherits). */
-    --wails-draggable: drag;
+    /* This starter stylesheet is retained while the Todo UI is developed.
+       Window drag regions are declared by App.css with WebView2 app-region. */
+    app-region: no-drag;
 }
 
 /* Framework mount nodes (#app / #root) shouldn't affect layout, so the

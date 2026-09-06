@@ -1,0 +1,138 @@
+package repository
+
+import (
+	"database/sql"
+	"fmt"
+	"strings"
+	"time"
+	"todo/internal/model"
+
+	"github.com/google/uuid"
+)
+
+type TodoRepository struct {
+	db *sql.DB
+}
+
+func NewTodoRepository(db *sql.DB) *TodoRepository {
+	return &TodoRepository{db: db}
+}
+
+func (r *TodoRepository) List() ([]model.Todo, error) {
+	rows, err := r.db.Query(`
+	     SELECT id, content, completed, sort_order, created_at
+		 FROM todos
+		 ORDER BY sort_order ASC, created_at ASC
+	`)
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	todos := make([]model.Todo, 0)
+
+	for rows.Next() {
+		var todo model.Todo
+		var completed int
+
+		if err := rows.Scan(
+			&todo.ID,
+			&todo.Content,
+			&completed,
+			&todo.SortOrder,
+			&todo.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		todo.Completed = (completed == 1)
+		todos = append(todos, todo)
+	}
+
+	return todos, rows.Err()
+}
+
+func (r *TodoRepository) Create(content string) (*model.Todo, error) {
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return &model.Todo{}, fmt.Errorf("content cannot be empty")
+	}
+
+	tx, err := r.db.Begin()
+	if err != nil {
+		return &model.Todo{}, err
+	}
+	defer tx.Rollback()
+
+	var nextOrder int
+	if err := tx.QueryRow(`
+		SELECT COALESCE(MAX(sort_order), -1) + 1 FROM todos
+	`).Scan(&nextOrder); err != nil {
+		return &model.Todo{}, err
+	} // TODO
+
+	todo := &model.Todo{
+		ID:        uuid.New().String(),
+		Content:   content,
+		Completed: false,
+		SortOrder: nextOrder,
+		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+	}
+
+	_, err = tx.Exec(`
+	    INSERT INTO todos (id, content, completed, sort_order, created_at)
+		VALUES (?, ?, ?, ?, ?)
+	`, todo.ID, todo.Content, 0, todo.SortOrder, todo.CreatedAt)
+
+	if err != nil {
+		return &model.Todo{}, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return &model.Todo{}, err
+	}
+
+	return todo, nil
+}
+
+func (r *TodoRepository) SetCompleted(id string, completed bool) error {
+	result, err := r.db.Exec(`
+		UPDATE todos
+		SET completed = ?
+		WHERE id = ?
+	`, completed, id)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return fmt.Errorf("todo with id %s not found", id)
+	}
+	return nil
+}
+
+func (r *TodoRepository) Delete(id string) error {
+	result, err := r.db.Exec(`
+		DELETE FROM todos
+		WHERE id = ?
+	`, id)
+	if err != nil {
+		return err
+	}
+
+	count, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		return fmt.Errorf("todo with id %s not found", id)
+	}
+	return nil
+}
