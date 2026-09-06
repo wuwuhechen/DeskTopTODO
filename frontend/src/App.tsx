@@ -1,37 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { TodoItem } from "./types";
+import { TodoService } from "../bindings/todo";
 import "./App.css";
 
-export default function App(){
+export default function App() {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [content, setContent] = useState<string>("");
 
-  function addTodo(){
+  useEffect(() => {
+    TodoService.List()
+      .then((items) => setTodos(items ?? []))
+      .catch(console.error);
+  }, []);
+
+  async function addTodo() {
     const text = content.trim();
     if (!text) return;
 
-    setTodos((current) => [
-      ...current,
-      {
-        id: crypto.randomUUID(),
-        content: text,
-        completed: false,
+    try {
+      const todo = await TodoService.Create(text);
+      if (todo === null) {
+        throw new Error("创建待办未返回数据");
       }
-    ])
+      setTodos((current) => [...current, todo]);
+      setContent("");
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function toggleTodo(id: string){
-    setTodos((current) => 
-     current.map((todo)=>
-      todo.id === id ? {...todo, completed: !todo.completed} : todo),
-    );
+  async function toggleTodo(todo:  TodoItem) {
+    try {
+      await TodoService.Toggle(todo.id, !todo.completed);
+
+      setTodos((current) =>
+        current.map((item) =>
+          item.id === todo.id
+            ? { ...item, completed: !item.completed }
+            : item,
+        ),
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  function deleteTodo(id: string){
-    setTodos((current) => current.filter((todo) => todo.id !== id));
+  async function deleteTodo(id: string) {
+    try {
+      await TodoService.Delete(id);
+      setTodos((current) => current.filter((todo) => todo.id !== id));
+    } catch (error) {
+      console.error(error);
+    }
   }
 
-  return(
+  return (
     <main className="sticky-note">
       <header className="note-header">
         <h1>今天要做什么</h1>
@@ -43,7 +66,7 @@ export default function App(){
             <input
               type="checkbox"
               checked={todo.completed}
-              onChange={() => toggleTodo(todo.id)}
+              onChange={() => toggleTodo(todo)}
             />
             <span className={todo.completed ? "completed" : ""}>
               {todo.content}
@@ -66,7 +89,6 @@ export default function App(){
           }}
         />
       </footer>
-
     </main>
-  )
+  );
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func Open() (*sql.DB, error) {
@@ -49,7 +51,7 @@ func migrate(db *sql.DB) error {
 		content TEXT NOT NULL,
 		completed BOOLEAN NOT NULL DEFAULT 0,
 		sort_order INTEGER NOT NULL,
-		created_at TEXT NOT NULL,
+		created_at TEXT NOT NULL
 	);
 
 	CREATE INDEX IF NOT EXISTS idx_todos_sort_order ON todos (sort_order);

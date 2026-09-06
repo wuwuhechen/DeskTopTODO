@@ -34,7 +34,7 @@ func (r *TodoRepository) List() ([]model.Todo, error) {
 
 	for rows.Next() {
 		var todo model.Todo
-		var completed int
+		var completed bool
 
 		if err := rows.Scan(
 			&todo.ID,
@@ -46,7 +46,7 @@ func (r *TodoRepository) List() ([]model.Todo, error) {
 			return nil, err
 		}
 
-		todo.Completed = (completed == 1)
+		todo.Completed = completed
 		todos = append(todos, todo)
 	}
 

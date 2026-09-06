@@ -2,6 +2,8 @@ package main
 
 import (
 	"embed"
+	"todo/internal/database"
+	"todo/internal/repository"
 
 	"log"
 	"time"
@@ -16,11 +18,21 @@ func init() {
 }
 
 func main() {
+	db, err := database.Open()
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	todoRepo := repository.NewTodoRepository(db)
+	todoService := NewTodoService(todoRepo)
+
 	app := application.New(application.Options{
 		Name:        "DesktopTODO",
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
-			application.NewService(NewTodoService()),
+			application.NewService(todoService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -55,7 +67,7 @@ func main() {
 		}
 	}()
 
-	err := app.Run()
+	err = app.Run()
 	if err != nil {
 		log.Fatal(err)
 	}
