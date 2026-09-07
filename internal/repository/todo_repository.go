@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"todo/internal/model"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 )
@@ -135,4 +136,23 @@ func (r *TodoRepository) Delete(id string) error {
 		return fmt.Errorf("todo with id %s not found", id)
 	}
 	return nil
+}
+
+func (r *TodoRepository) UpdateContent(id string, content string) error {
+	content = strings.TrimSpace(content)
+	if content == "" {
+		return fmt.Errorf("content cannot be empty")
+	}
+
+	if utf8.RuneCountInString(content) > 500 {
+		return fmt.Errorf("content cannot exceed 500 characters")
+	}
+
+	_, err := r.db.Exec(`
+		UPDATE todos
+		SET content = ?, updated_at = ?
+		WHERE id = ?
+	`, content, time.Now().UTC().Format(time.RFC3339), id)
+
+	return err
 }

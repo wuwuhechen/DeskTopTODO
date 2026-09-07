@@ -24,3 +24,7 @@ export function List(): $CancellablePromise<model$0.Todo[] | null> {
 export function Toggle(id: string, completed: boolean): $CancellablePromise<void> {
     return $Call.ByID(607591045, id, completed);
 }
+
+export function UpdateContent(id: string, content: string): $CancellablePromise<void> {
+    return $Call.ByID(781007425, id, content);
+}

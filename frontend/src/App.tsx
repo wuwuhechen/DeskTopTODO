@@ -7,6 +7,10 @@ export default function App() {
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [content, setContent] = useState<string>("");
 
+  const [editingID, setEditingID] = useState<string | null>(null);
+  const [draft, setDraft] = useState<string>("");
+
+
   useEffect(() => {
     TodoService.List()
       .then((items) => setTodos(items ?? []))
@@ -54,6 +58,31 @@ export default function App() {
     }
   }
 
+  function startEditing(todo: TodoItem) {
+    setEditingID(todo.id);
+    setDraft(todo.content);
+  }
+
+  function cancelEditing() {
+    setEditingID(null);
+    setDraft("");
+  }
+
+  async function saveEditing(todo: TodoItem) {
+    const text = draft.trim();
+    if (!text) return;
+
+    await TodoService.UpdateContent(todo.id, text);
+
+    setTodos((current) =>
+      current.map((item) =>
+        item.id === todo.id ? { ...item, content: text } : item,
+      ),
+    );
+
+    cancelEditing();
+  }
+
   return (
     <main className="sticky-note">
       <header className="note-header">
@@ -62,18 +91,44 @@ export default function App() {
 
       <section className="todo-list">
         {todos.map((todo) => (
-          <div key={todo.id} className="todo-item">
+          <div className="todo-item" key={todo.id}>
             <input
               type="checkbox"
               checked={todo.completed}
               onChange={() => toggleTodo(todo)}
             />
-            <span className={todo.completed ? "completed" : ""}>
-              {todo.content}
-            </span>
-            <button onClick={() => deleteTodo(todo.id)}>删除</button>
+            
+            {editingID === todo.id ? (
+              <input
+                className="todo-edit-input"
+                value={draft}
+                autoFocus
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    saveEditing(todo);
+                  } else if (e.key === "Escape") {
+                    cancelEditing();
+                  }
+                }}
+                onBlur={() => saveEditing(todo)}
+              />
+            ) : (
+              <span
+                className={`todo-content ${todo.completed ? "completed" : ""}`}
+                onDoubleClick={() => startEditing(todo)}
+                title="双击编辑"
+              >
+                {todo.content}
+              </span>
+            )}
+
+            <button className="delete-button" onClick={() => deleteTodo(todo.id)}>
+              删除
+            </button>
           </div>
         ))}
+
       </section>
 
       <footer>

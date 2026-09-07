@@ -28,3 +28,7 @@ func (s *TodoService) Toggle(id string, completed bool) error {
 func (s *TodoService) Delete(id string) error {
 	return s.repo.Delete(id)
 }
+
+func (s *TodoService) UpdateContent(id string, content string) error {
+	return s.repo.UpdateContent(id, content)
+}
