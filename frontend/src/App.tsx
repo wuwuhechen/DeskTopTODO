@@ -10,11 +10,17 @@ export default function App() {
   const [editingID, setEditingID] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>("");
 
+  const [showCompleted, setShowCompleted] = useState("false");
+
+  const visibleTodos =
+    showCompleted === "true" ? todos : todos.filter((todo) => !todo.completed);
 
   useEffect(() => {
     TodoService.List()
       .then((items) => setTodos(items ?? []))
       .catch(console.error);
+
+    fetchShowCompleted().catch(console.error);
   }, []);
 
   async function addTodo() {
@@ -33,15 +39,13 @@ export default function App() {
     }
   }
 
-  async function toggleTodo(todo:  TodoItem) {
+  async function toggleTodo(todo: TodoItem) {
     try {
       await TodoService.Toggle(todo.id, !todo.completed);
 
       setTodos((current) =>
         current.map((item) =>
-          item.id === todo.id
-            ? { ...item, completed: !item.completed }
-            : item,
+          item.id === todo.id ? { ...item, completed: !item.completed } : item,
         ),
       );
     } catch (error) {
@@ -83,21 +87,49 @@ export default function App() {
     cancelEditing();
   }
 
+  async function fetchShowCompleted() {
+    try {
+      const value = await TodoService.GetShowCompleted();
+      setShowCompleted(value);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async function toggleShowCompleted() {
+    const newValue = showCompleted === "true" ? "false" : "true";
+    setShowCompleted(newValue);
+    await TodoService.SetShowCompleted(newValue);
+  }
+
   return (
     <main className="sticky-note">
       <header className="note-header">
-        <h1>今天要做什么</h1>
+        <div>
+          <h1>今天要做什么</h1>
+          <span>
+            已完成 {todos.filter((todo) => todo.completed).length}/{todos.length}
+          </span>
+        </div>
+
+        <button
+          className="toggle-completed-button"
+          type="button"
+          onClick={toggleShowCompleted}
+        >
+          {showCompleted === "true" ? "隐藏已完成" : "显示已完成"}
+        </button>
       </header>
 
       <section className="todo-list">
-        {todos.map((todo) => (
+        {visibleTodos.map((todo) => (
           <div className="todo-item" key={todo.id}>
             <input
               type="checkbox"
               checked={todo.completed}
               onChange={() => toggleTodo(todo)}
             />
-            
+
             {editingID === todo.id ? (
               <input
                 className="todo-edit-input"
@@ -123,12 +155,14 @@ export default function App() {
               </span>
             )}
 
-            <button className="delete-button" onClick={() => deleteTodo(todo.id)}>
+            <button
+              className="delete-button"
+              onClick={() => deleteTodo(todo.id)}
+            >
               删除
             </button>
           </div>
         ))}
-
       </section>
 
       <footer>

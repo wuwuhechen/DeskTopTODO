@@ -62,6 +62,8 @@ func migrate(db *sql.DB) error {
 			key TEXT PRIMARY KEY,
 			value TEXT NOT NULL
 		);
+
+		INSERT OR IGNORE INTO settings (key, value) VALUES ('show_completed', 'false');
 	`)
 	if err != nil {
 		return err

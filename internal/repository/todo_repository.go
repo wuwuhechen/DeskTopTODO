@@ -156,3 +156,39 @@ func (r *TodoRepository) UpdateContent(id string, content string) error {
 
 	return err
 }
+
+func (r *TodoRepository) SetShowCompleted(showCompleted string) error {
+	var count int
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) FROM settings WHERE key = 'show_completed'
+	`).Scan(&count)
+
+	if err != nil {
+		return err
+	}
+
+	if count == 0 {
+		_, err = r.db.Exec(`
+			INSERT INTO settings (key, value) VALUES ('show_completed', ?)
+		`, showCompleted)
+	} else {
+		_, err = r.db.Exec(`
+			UPDATE settings SET value = ? WHERE key = 'show_completed'
+		`, showCompleted)
+	}
+
+	return err
+}
+
+func (r *TodoRepository) GetShowCompleted() (string, error) {
+	var value string
+	err := r.db.QueryRow(`
+		SELECT value FROM settings WHERE key = 'show_completed'
+	`).Scan(&value)
+
+	if err != nil {
+		return "", err
+	}
+
+	return value, nil
+}

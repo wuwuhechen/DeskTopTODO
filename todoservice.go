@@ -32,3 +32,11 @@ func (s *TodoService) Delete(id string) error {
 func (s *TodoService) UpdateContent(id string, content string) error {
 	return s.repo.UpdateContent(id, content)
 }
+
+func (s *TodoService) SetShowCompleted(showCompleted string) error {
+	return s.repo.SetShowCompleted(showCompleted)
+}
+
+func (s *TodoService) GetShowCompleted() (string, error) {
+	return s.repo.GetShowCompleted()
+}
