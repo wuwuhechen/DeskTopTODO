@@ -21,7 +21,7 @@ func NewTodoRepository(db *sql.DB) *TodoRepository {
 
 func (r *TodoRepository) List() ([]model.Todo, error) {
 	rows, err := r.db.Query(`
-	     SELECT id, content, completed, sort_order, created_at
+	     SELECT id, content, completed, priority, sort_order, created_at, updated_at
 		 FROM todos
 		 ORDER BY sort_order ASC, created_at ASC
 	`)
@@ -41,8 +41,10 @@ func (r *TodoRepository) List() ([]model.Todo, error) {
 			&todo.ID,
 			&todo.Content,
 			&completed,
+			&todo.Priority,
 			&todo.SortOrder,
 			&todo.CreatedAt,
+			&todo.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -77,14 +79,16 @@ func (r *TodoRepository) Create(content string) (*model.Todo, error) {
 		ID:        uuid.New().String(),
 		Content:   content,
 		Completed: false,
+		Priority:  "normal",
 		SortOrder: nextOrder,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
+		UpdatedAt: "",
 	}
 
 	_, err = tx.Exec(`
-	    INSERT INTO todos (id, content, completed, sort_order, created_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, todo.ID, todo.Content, 0, todo.SortOrder, todo.CreatedAt)
+	    INSERT INTO todos (id, content, completed, priority, sort_order, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, todo.ID, todo.Content, 0, todo.Priority, todo.SortOrder, todo.CreatedAt, todo.UpdatedAt)
 
 	if err != nil {
 		return &model.Todo{}, err
@@ -191,4 +195,20 @@ func (r *TodoRepository) GetShowCompleted() (string, error) {
 	}
 
 	return value, nil
+}
+
+func (r *TodoRepository) UpdatePriority(id string, priority string) error {
+	switch priority {
+	case "normal", "low", "medium", "high":
+	default:
+		return fmt.Errorf("invalid priority value: %s", priority)
+	}
+
+	_, err := r.db.Exec(`
+		UPDATE todos
+		SET priority = ?, updated_at = ?
+		WHERE id = ?
+	`, priority, time.Now().UTC().Format(time.RFC3339), id)
+
+	return err
 }

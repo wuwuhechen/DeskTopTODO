@@ -8,3 +8,4 @@ export type TodoItem = {
     updatedAt : string;
 };
 
+export type Priority = "normal"|"low" | "medium" | "high";

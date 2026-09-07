@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import type { TodoItem } from "./types";
+import { TodoItem as TodoRow } from "./TodoItem";
+import type { Priority, TodoItem } from "./types";
 import { TodoService } from "../bindings/todo";
 import "./App.css";
 
@@ -102,6 +103,22 @@ export default function App() {
     await TodoService.SetShowCompleted(newValue);
   }
 
+  async function updatePriority(id: string, priority: Priority) {
+    const previousTodos = todos;
+
+    setTodos((current) =>
+      current.map((todo) => (todo.id === id ? { ...todo, priority } : todo)),
+    );
+    
+    try {
+      await TodoService.UpdatePriority(id, priority);
+    } catch (error) {
+      setTodos(previousTodos);
+      alert("更新优先级失败，请重试");
+    }
+
+  }
+
   return (
     <main className="sticky-note">
       <header className="note-header">
@@ -123,45 +140,19 @@ export default function App() {
 
       <section className="todo-list">
         {visibleTodos.map((todo) => (
-          <div className="todo-item" key={todo.id}>
-            <input
-              type="checkbox"
-              checked={todo.completed}
-              onChange={() => toggleTodo(todo)}
-            />
-
-            {editingID === todo.id ? (
-              <input
-                className="todo-edit-input"
-                value={draft}
-                autoFocus
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    saveEditing(todo);
-                  } else if (e.key === "Escape") {
-                    cancelEditing();
-                  }
-                }}
-                onBlur={() => saveEditing(todo)}
-              />
-            ) : (
-              <span
-                className={`todo-content ${todo.completed ? "completed" : ""}`}
-                onDoubleClick={() => startEditing(todo)}
-                title="双击编辑"
-              >
-                {todo.content}
-              </span>
-            )}
-
-            <button
-              className="delete-button"
-              onClick={() => deleteTodo(todo.id)}
-            >
-              删除
-            </button>
-          </div>
+          <TodoRow
+            key={todo.id}
+            todo={todo}
+            isEditing={editingID === todo.id}
+            draft={draft}
+            onToggle={toggleTodo}
+            onStartEditing={startEditing}
+            onDraftChange={setDraft}
+            onSave={saveEditing}
+            onCancel={cancelEditing}
+            onDelete={deleteTodo}
+            onPriorityChange={updatePriority}
+          />
         ))}
       </section>
 

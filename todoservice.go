@@ -40,3 +40,7 @@ func (s *TodoService) SetShowCompleted(showCompleted string) error {
 func (s *TodoService) GetShowCompleted() (string, error) {
 	return s.repo.GetShowCompleted()
 }
+
+func (s *TodoService) UpdatePriority(id string, priority string) error {
+	return s.repo.UpdatePriority(id, priority)
+}

@@ -36,3 +36,7 @@ export function Toggle(id: string, completed: boolean): $CancellablePromise<void
 export function UpdateContent(id: string, content: string): $CancellablePromise<void> {
     return $Call.ByID(781007425, id, content);
 }
+
+export function UpdatePriority(id: string, priority: string): $CancellablePromise<void> {
+    return $Call.ByID(3834533180, id, priority);
+}
