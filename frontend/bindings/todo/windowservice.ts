@@ -12,6 +12,9 @@ import * as application$0 from "../github.com/wailsapp/wails/v3/pkg/application/
 // @ts-ignore: Unused imports
 import * as model$0 from "./internal/model/models.js";
 
+/**
+ * TODO
+ */
 export function AttachWindow(app: application$0.App | null, window: application$0.WebviewWindow | null): $CancellablePromise<void> {
     return $Call.ByID(2890288284, app, window);
 }
@@ -34,4 +37,12 @@ export function SaveNow(): $CancellablePromise<void> {
 
 export function ScheduleSave(): $CancellablePromise<void> {
     return $Call.ByID(2911789805);
+}
+
+export function SetLocked(locked: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3074266321, locked);
+}
+
+export function SetPinned(pinned: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3217312257, pinned);
 }

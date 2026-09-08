@@ -1,13 +1,14 @@
-import type { Priority, TodoItem } from "./types";
+import type { Todo } from "../bindings/todo/internal/model";
+import type { Priority } from "./types";
 
 type Props = {
-  todo: TodoItem;
+  todo: Todo;
   isEditing: boolean;
   draft: string;
-  onToggle: (todo: TodoItem) => Promise<void>;
-  onStartEditing: (todo: TodoItem) => void;
+  onToggle: (todo: Todo) => Promise<void>;
+  onStartEditing: (todo: Todo) => void;
   onDraftChange: (value: string) => void;
-  onSave: (todo: TodoItem) => Promise<void>;
+  onSave: (todo: Todo) => Promise<void>;
   onCancel: () => void;
   onDelete: (id: string) => Promise<void>;
   onPriorityChange: (id: string, priority: Priority) => Promise<void>;

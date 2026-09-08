@@ -14,19 +14,19 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { TodoItem } from "./types";
+import type { Todo } from "../bindings/todo/internal/model";
 import { TodoService } from "../bindings/todo";
 
 type Props = {
   noteID: string;
-  todos: TodoItem[];
-  setTodos: Dispatch<SetStateAction<TodoItem[]>>;
+  todos: Todo[];
+  setTodos: Dispatch<SetStateAction<Todo[]>>;
   sortingEnabled: boolean;
-  renderTodo: (todo: TodoItem) => ReactNode;
+  renderTodo: (todo: Todo) => ReactNode;
 };
 
 type SortableTodoProps = {
-  todo: TodoItem;
+  todo: Todo;
   children: ReactNode;
   disabled: boolean;
 };

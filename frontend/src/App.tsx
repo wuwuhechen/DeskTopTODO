@@ -1,27 +1,30 @@
 import { useState, useEffect } from "react";
 
-import { TodoItem as TodoRow } from "./todo_item";
+import { TodoItem } from "./todo_item";
 import { TodoList } from "./todo_list";
 
-import type { Priority, TodoItem } from "./types";
+import type { Todo } from "../bindings/todo/internal/model";
+import type { Priority } from "./types";
 
-import { TodoService, SettingService } from "../bindings/todo";
+import { TodoService, SettingService, WindowService } from "../bindings/todo";
 
 
 
 import "./App.css";
 
 export default function App() {
-  const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState<string>("");
 
   const [editingID, setEditingID] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>("");
 
   const [showCompleted, setShowCompleted] = useState("false");
+  const [pinned, setPinned] = useState<boolean | null>(null);
+  const [isSavingPinned, setIsSavingPinned] = useState(false);
+  const [locked, setLocked] = useState<boolean | null>(null);
+  const [isSavingLocked, setIsSavingLocked] = useState(false);
 
-  // 完成状态只影响展示分组，不修改保存的拖拽排序值。
-  // 未完成事项保持既有顺序，完成事项同样保留彼此间的既有顺序。
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedTodos = todos.filter((todo) => todo.completed);
   const visibleTodos =
@@ -35,6 +38,7 @@ export default function App() {
       .catch(console.error);
 
     fetchShowCompleted().catch(console.error);
+    fetchWindowState().catch(console.error);
   }, []);
 
   async function addTodo() {
@@ -53,7 +57,7 @@ export default function App() {
     }
   }
 
-  async function toggleTodo(todo: TodoItem) {
+  async function toggleTodo(todo: Todo) {
     try {
       await TodoService.Toggle(todo.id, !todo.completed);
 
@@ -76,7 +80,7 @@ export default function App() {
     }
   }
 
-  function startEditing(todo: TodoItem) {
+  function startEditing(todo: Todo) {
     setEditingID(todo.id);
     setDraft(todo.content);
   }
@@ -86,7 +90,7 @@ export default function App() {
     setDraft("");
   }
 
-  async function saveEditing(todo: TodoItem) {
+  async function saveEditing(todo: Todo) {
     const text = draft.trim();
     if (!text) return;
 
@@ -116,6 +120,44 @@ export default function App() {
     await SettingService.SetShowCompleted(newValue);
   }
 
+  async function fetchWindowState() {
+    const state = await WindowService.LoadWindowSettings();
+    setPinned(state?.pinned ?? false);
+    setLocked(state?.locked ?? false);
+  }
+
+  async function togglePinned() {
+    if (pinned === null || isSavingPinned) return;
+
+    const nextPinned = !pinned;
+    setIsSavingPinned(true);
+    try {
+      await WindowService.SetPinned(nextPinned);
+      setPinned(nextPinned);
+    } catch (error) {
+      console.error(error);
+      alert("更新置顶状态失败，请重试");
+    } finally {
+      setIsSavingPinned(false);
+    }
+  }
+
+  async function toggleLocked() {
+    if (locked === null || isSavingLocked) return;
+
+    const nextLocked = !locked;
+    setIsSavingLocked(true);
+    try {
+      await WindowService.SetLocked(nextLocked);
+      setLocked(nextLocked);
+    } catch (error) {
+      console.error(error);
+      alert("更新位置锁定状态失败，请重试");
+    } finally {
+      setIsSavingLocked(false);
+    }
+  }
+
   async function updatePriority(id: string, priority: Priority) {
     const previousTodos = todos;
 
@@ -142,7 +184,7 @@ export default function App() {
 
   return (
     <main className="sticky-note">
-      <header className="note-header">
+      <header className={`note-header${locked ? " is-position-locked" : ""}`}>
         <div>
           <h1>今天要做什么</h1>
           <span>
@@ -155,13 +197,33 @@ export default function App() {
           )}
         </div>
 
-        <button
-          className="toggle-completed-button"
-          type="button"
-          onClick={toggleShowCompleted}
-        >
-          {showCompleted === "true" ? "隐藏已完成" : "显示已完成"}
-        </button>
+        <div className="header-actions">
+          <button
+            className="toggle-completed-button"
+            type="button"
+            onClick={toggleShowCompleted}
+          >
+            {showCompleted === "true" ? "隐藏已完成" : "显示已完成"}
+          </button>
+          <button
+            className="toggle-pinned-button"
+            type="button"
+            disabled={pinned === null || isSavingPinned}
+            aria-pressed={pinned ?? undefined}
+            onClick={togglePinned}
+          >
+            {pinned ? "取消置顶" : "置顶显示"}
+          </button>
+          <button
+            className="toggle-locked-button"
+            type="button"
+            disabled={locked === null || isSavingLocked}
+            aria-pressed={locked ?? undefined}
+            onClick={toggleLocked}
+          >
+            {locked ? "解除锁定" : "锁定位置"}
+          </button>
+        </div>
       </header>
 
       <TodoList
@@ -170,7 +232,7 @@ export default function App() {
         setTodos={setTodos}
         sortingEnabled={showCompleted === "true"}
         renderTodo={(todo) => (
-          <TodoRow
+          <TodoItem
             key={todo.id}
             todo={todo}
             isEditing={editingID === todo.id}

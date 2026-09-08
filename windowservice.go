@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"sync"
 	"time"
 
@@ -34,6 +35,7 @@ func NewWindowService(settings *repository.WindowRepository) *WindowService {
 	}
 }
 
+// TODO
 func (s *WindowService) AttachWindow(
 	app *application.App,
 	window *application.WebviewWindow,
@@ -68,6 +70,50 @@ func (s *WindowService) AttachWindow(
 
 func (s *WindowService) LoadWindowSettings() (*model.WindowState, error) {
 	return s.settings.LoadWindowSettings()
+}
+
+func (s *WindowService) SetPinned(pinned bool) error {
+	s.saveMu.Lock()
+	defer s.saveMu.Unlock()
+
+	if s.window == nil {
+		return errors.New("window is not attached")
+	}
+
+	state, err := s.settings.LoadWindowSettings()
+	if err != nil {
+		return err
+	}
+
+	state.Pinned = pinned
+	if err := s.settings.SaveWindowSettings(state); err != nil {
+		return err
+	}
+
+	s.window.SetAlwaysOnTop(pinned)
+	return nil
+}
+
+func (s *WindowService) SetLocked(locked bool) error {
+	s.saveMu.Lock()
+	defer s.saveMu.Unlock()
+
+	if s.window == nil {
+		return errors.New("window is not attached")
+	}
+
+	state, err := s.settings.LoadWindowSettings()
+	if err != nil {
+		return err
+	}
+
+	state.Locked = locked
+	if err := s.settings.SaveWindowSettings(state); err != nil {
+		return err
+	}
+
+	s.window.SetResizable(!locked)
+	return nil
 }
 
 func (s *WindowService) RestoreState() error {
