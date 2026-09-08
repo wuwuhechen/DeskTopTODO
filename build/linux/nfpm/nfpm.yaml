@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "desktoptodo.exe"
+name: "desktoptodo"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A DesktopTODO application"
-vendor: "My Company"
+description: "桌面待办便签"
+vendor: "N310"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/desktoptodo.exe"
-    dst: "/usr/local/bin/desktoptodo.exe"
+  - src: "./bin/desktoptodo"
+    dst: "/usr/local/bin/desktoptodo"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/desktoptodo.exe.png"
-  - src: "./build/linux/desktoptodo.exe.desktop"
-    dst: "/usr/share/applications/desktoptodo.exe.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/desktoptodo.png"
+  - src: "./build/linux/desktoptodo.desktop"
+    dst: "/usr/share/applications/desktoptodo.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

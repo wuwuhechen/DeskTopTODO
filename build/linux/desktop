@@ -1,13 +1,13 @@
 [Desktop Entry]
 Version=1.0
-Name=My Product
-Comment=A DesktopTODO application
+Name=桌面待办便签
+Comment=桌面待办便签
 # The Exec line includes %u to pass the URL to the application
-Exec=/usr/local/bin/desktoptodo.exe %u
+Exec=/usr/local/bin/desktoptodo %u
 Terminal=false
 Type=Application
-Icon=desktoptodo.exe
+Icon=desktoptodo
 Categories=Utility;
-StartupWMClass=desktoptodo.exe
+StartupWMClass=desktoptodo
 
  

@@ -9,23 +9,45 @@ body,
 
 body {
   app-region: no-drag;
+  color: #49264d;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
+:root {
+  --glass-surface: rgb(225 190 238 / 18%);
+  --glass-control: rgb(255 248 255 / 13%);
+  --glass-control-hover: rgb(255 250 255 / 24%);
+  --glass-border: rgb(255 255 255 / 38%);
+  --glass-border-subtle: rgb(116 69 122 / 14%);
+  --text-primary: #49264d;
+  --text-secondary: #704d75;
+  --focus-ring: #98659d;
+}
+
 .sticky-note {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: 100%;
   height: 100%;
   padding: 18px;
   display: flex;
   flex-direction: column;
-  color: #453916;
-  background: #fff3a6;
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgb(66 51 7 / 28%);
-  font-family: "Microsoft YaHei", sans-serif;
+  color: var(--text-primary);
+  background: var(--glass-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  box-shadow:
+    0 18px 42px rgb(101 60 111 / 16%),
+    inset 0 1px 0 rgb(255 255 255 / 45%),
+    inset 0 -1px 0 rgb(255 255 255 / 6%);
+  backdrop-filter: blur(14px) saturate(106%) brightness(1.04);
+  -webkit-backdrop-filter: blur(14px) saturate(106%) brightness(1.04);
 }
 
 .note-header {
@@ -44,7 +66,11 @@ body {
 
 .note-header h1 {
   margin: 0;
+  color: var(--text-primary);
   font-size: 18px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 8px rgb(116 66 123 / 18%);
 }
 
 .note-heading {
@@ -65,9 +91,10 @@ body {
   align-items: center;
   align-self: start;
   overflow: hidden;
-  border: 1px solid rgb(111 88 24 / 16%);
+  border: 1px solid var(--glass-border-subtle);
   border-radius: 7px;
-  background: rgb(255 255 255 / 34%);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 
 .window-control-button {
@@ -77,9 +104,9 @@ body {
   height: 25px;
   place-items: center;
   border: 0;
-  border-right: 1px solid rgb(111 88 24 / 13%);
+  border-right: 1px solid var(--glass-border-subtle);
   padding: 0;
-  color: #665c49;
+  color: var(--text-secondary);
   background: transparent;
   cursor: pointer;
   font: 18px/1 system-ui, sans-serif;
@@ -91,13 +118,13 @@ body {
 }
 
 .window-control-button:hover {
-  color: #453916;
-  background: rgb(255 255 255 / 66%);
+  color: var(--text-primary);
+  background: var(--glass-control-hover);
 }
 
 .window-control-button:focus-visible {
   z-index: 1;
-  outline: 2px solid #a88a28;
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
@@ -119,12 +146,12 @@ body {
 .note-header span {
   display: block;
   margin-top: 3px;
-  color: #796d49;
+  color: var(--text-secondary);
   font-size: 12px;
 }
 
 .note-header .sorting-hint {
-  color: #9a4b00;
+  color: #845184;
 }
 
 .menu-button,
@@ -142,7 +169,7 @@ input {
   gap: 7px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #d5bd66 transparent;
+  scrollbar-color: rgb(132 81 137 / 48%) transparent;
 }
 
 .todo-list::-webkit-scrollbar {
@@ -150,7 +177,7 @@ input {
 }
 
 .todo-list::-webkit-scrollbar-thumb {
-  background: #d5bd66;
+  background: rgb(132 81 137 / 45%);
   border-radius: 99px;
 }
 
@@ -163,17 +190,21 @@ input {
   min-height: 38px;
   padding: 6px 7px 6px 32px;
   border-radius: 9px;
-  background: rgb(255 255 255 / 36%);
-  transition: background-color 150ms ease, transform 150ms ease;
+  border: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(255 247 255 / 8%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
 }
 
 .priority-dot {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 2px solid rgb(69 57 22 / 28%);
-  background: #cba8d6;
-  box-shadow: 0 1px 2px rgb(69 57 22 / 20%);
+  border: 2px solid rgb(237 248 255 / 50%);
+  background: #b9c8dc;
+  box-shadow: 0 1px 4px rgb(1 12 30 / 30%);
 }
 
 .priority-low .priority-dot {
@@ -181,13 +212,13 @@ input {
 }
 
 .priority-medium .priority-dot {
-  background: #9a4b00;
+  background: #ffb454;
 }
 
 .priority-high .priority-dot {
-  border-color: #5f0b22;
-  background: #9f1239;
-  box-shadow: 0 0 0 2px rgb(159 18 57 / 22%), 0 1px 2px rgb(69 57 22 / 20%);
+  border-color: #ffd0dd;
+  background: #fb5e85;
+  box-shadow: 0 0 0 2px rgb(251 94 133 / 22%), 0 1px 4px rgb(1 12 30 / 30%);
 }
 
 /* 完成状态只降低文本视觉权重；优先级颜色仍保留。 */
@@ -206,19 +237,21 @@ input {
   border: 0;
   border-radius: 6px;
   padding: 4px 6px;
-  color: #665c49;
-  background: rgb(255 255 255 / 50%);
+  color: var(--text-secondary);
+  background: rgb(255 247 255 / 10%);
   font: inherit;
   font-size: 12px;
 }
 
 .todo-item:hover {
-  background: rgb(255 255 255 / 58%);
+  border-color: rgb(255 255 255 / 35%);
+  background: rgb(255 248 255 / 17%);
 }
 
 .todo-item:focus-within {
-  background: rgb(255 255 255 / 66%);
-  box-shadow: 0 0 0 2px rgb(173 139 38 / 25%);
+  border-color: rgb(152 101 157 / 52%);
+  background: rgb(255 248 255 / 20%);
+  box-shadow: 0 0 0 2px rgb(152 101 157 / 17%), inset 0 1px 0 rgb(255 255 255 / 30%);
 }
 
 .todo-item input[type="checkbox"] {
@@ -227,7 +260,7 @@ input {
   height: 17px;
   margin: 0;
   padding: 0;
-  border: 2px solid #a38c35;
+  border: 2px solid rgb(228 242 255 / 65%);
   border-radius: 50%;
   background: transparent;
   cursor: pointer;
@@ -235,15 +268,15 @@ input {
 }
 
 .todo-item input[type="checkbox"]:checked {
-  border-color: #5c813d;
-  background: #5c813d;
-  box-shadow: inset 0 0 0 3px #fff3a6;
+  border-color: #78e0ba;
+  background: #4cc797;
+  box-shadow: inset 0 0 0 3px rgb(18 51 68 / 92%);
 }
 
 .todo-content {
   min-width: 0;
   overflow: hidden;
-  color: #453916;
+  color: var(--text-primary);
   font-size: 14px;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -251,7 +284,7 @@ input {
 }
 
 .todo-content.completed {
-  color: #8b8167;
+  color: #8a6d8e;
   text-decoration: line-through;
   text-decoration-thickness: 1.5px;
 }
@@ -259,10 +292,10 @@ input {
 .todo-edit-input {
   min-width: 0;
   padding: 5px 7px;
-  border: 1px solid #b89b3e;
+  border: 1px solid rgb(152 101 157 / 58%);
   border-radius: 6px;
-  background: rgb(255 255 255 / 78%);
-  color: #453916;
+  background: rgb(255 250 255 / 24%);
+  color: var(--text-primary);
   font: inherit;
 }
 
@@ -273,7 +306,7 @@ input {
 .toggle-autostart-button {
   app-region: no-drag;
   border: 0;
-  color: #6c5d34;
+  color: var(--text-secondary);
   font: inherit;
   cursor: pointer;
   transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
@@ -287,8 +320,8 @@ input {
 }
 
 .delete-button:hover {
-  color: #9f3730;
-  background: rgb(183 65 56 / 12%);
+  color: #ffd6df;
+  background: rgb(255 100 130 / 18%);
 }
 
 .delete-button:active,
@@ -299,7 +332,9 @@ input {
 .toggle-completed-button {
   padding: 6px 8px;
   border-radius: 7px;
-  background: rgb(255 255 255 / 48%);
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%);
   font-size: 12px;
   white-space: nowrap;
 }
@@ -310,8 +345,10 @@ input {
   padding: 6px 8px;
   border: 0;
   border-radius: 7px;
-  color: #6c5d34;
-  background: rgb(255 255 255 / 48%);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%);
   font: inherit;
   font-size: 12px;
   white-space: nowrap;
@@ -325,8 +362,10 @@ input {
   padding: 6px 8px;
   border: 0;
   border-radius: 7px;
-  color: #6c5d34;
-  background: rgb(255 255 255 / 48%);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%);
   font: inherit;
   font-size: 12px;
   white-space: nowrap;
@@ -340,8 +379,10 @@ input {
   padding: 6px 8px;
   border: 0;
   border-radius: 7px;
-  color: #6c5d34;
-  background: rgb(255 255 255 / 48%);
+  color: var(--text-secondary);
+  border: 1px solid var(--glass-border-subtle);
+  background: var(--glass-control);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%);
   font: inherit;
   font-size: 12px;
   white-space: nowrap;
@@ -350,36 +391,39 @@ input {
 }
 
 .toggle-pinned-button[aria-pressed="true"] {
-  color: #453916;
-  background: rgb(255 255 255 / 78%);
-  box-shadow: inset 0 0 0 1px rgb(173 139 38 / 30%);
+  color: var(--text-primary);
+  border-color: rgb(255 255 255 / 48%);
+  background: rgb(255 246 255 / 21%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 17%);
 }
 
 .toggle-locked-button[aria-pressed="true"] {
-  color: #453916;
-  background: rgb(255 255 255 / 78%);
-  box-shadow: inset 0 0 0 1px rgb(173 139 38 / 30%);
+  color: var(--text-primary);
+  border-color: rgb(255 255 255 / 48%);
+  background: rgb(255 246 255 / 21%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 17%);
 }
 
 .toggle-autostart-button[aria-pressed="true"] {
-  color: #453916;
-  background: rgb(255 255 255 / 78%);
-  box-shadow: inset 0 0 0 1px rgb(173 139 38 / 30%);
+  color: var(--text-primary);
+  border-color: rgb(255 255 255 / 48%);
+  background: rgb(255 246 255 / 21%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 17%);
 }
 
 .toggle-pinned-button:hover:not(:disabled) {
-  color: #453916;
-  background: rgb(255 255 255 / 72%);
+  color: var(--text-primary);
+  background: var(--glass-control-hover);
 }
 
 .toggle-locked-button:hover:not(:disabled) {
-  color: #453916;
-  background: rgb(255 255 255 / 72%);
+  color: var(--text-primary);
+  background: var(--glass-control-hover);
 }
 
 .toggle-autostart-button:hover:not(:disabled) {
-  color: #453916;
-  background: rgb(255 255 255 / 72%);
+  color: var(--text-primary);
+  background: var(--glass-control-hover);
 }
 
 .toggle-pinned-button:active:not(:disabled) {
@@ -410,8 +454,8 @@ input {
 }
 
 .toggle-completed-button:hover {
-  color: #453916;
-  background: rgb(255 255 255 / 72%);
+  color: var(--text-primary);
+  background: var(--glass-control-hover);
 }
 
 .todo-list + footer {
@@ -423,18 +467,21 @@ input {
   border: 0;
   border-radius: 8px;
   padding: 10px 12px;
-  background: rgb(255 255 255 / 58%);
-  color: #453916;
+  border: 1px solid var(--glass-border-subtle);
+  background: rgb(255 250 255 / 15%);
+  color: var(--text-primary);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 10%);
   font: inherit;
   outline: none;
 }
 
 input:focus {
-  box-shadow: 0 0 0 2px rgb(173 139 38 / 40%);
+  border-color: rgb(152 101 157 / 62%);
+  box-shadow: 0 0 0 2px rgb(152 101 157 / 20%), inset 0 1px 0 rgb(255 255 255 / 30%);
 }
 
 input::placeholder {
-  color: #948660;
+  color: #89668d;
 }
 
 .drag-handle {
@@ -443,7 +490,7 @@ input::placeholder {
   height: 28px;
   border: 0;
   padding: 0;
-  color: #988e6f;
+  color: #89688e;
   background: transparent;
   cursor: grab;
   font-size: 18px;

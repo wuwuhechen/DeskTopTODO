@@ -69,15 +69,18 @@ func main() {
 	})
 
 	window := app.Window.NewWithOptions(application.WebviewWindowOptions{
-		Title:          "DesktopTODO",
-		Width:          340,
-		Height:         460,
-		AlwaysOnTop:    true,
-		MinWidth:       320,
-		MinHeight:      320,
-		Frameless:      true,
-		BackgroundType: application.BackgroundTypeTransparent,
+		Title:       "DesktopTODO",
+		Width:       340,
+		Height:      460,
+		AlwaysOnTop: true,
+		MinWidth:    320,
+		MinHeight:   320,
+		Frameless:   true,
+		// Windows 11 使用原生半透明背景，让桌面内容透出并模糊；
+		// 前端 CSS 只叠加轻量淡紫色调，避免遮住壁纸或其他应用。
+		BackgroundType: application.BackgroundTypeTranslucent,
 		Windows: application.WindowsWindow{
+			BackdropType:           application.Acrylic,
 			NonClientRegionSupport: true,
 		},
 	})
