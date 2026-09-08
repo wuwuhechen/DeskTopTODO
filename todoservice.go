@@ -6,12 +6,11 @@ import (
 )
 
 type TodoService struct {
-	todos    *repository.TodoRepository
-	settings *repository.SettingRepository
+	todos *repository.TodoRepository
 }
 
-func NewTodoService(todos *repository.TodoRepository, settings *repository.SettingRepository) *TodoService {
-	return &TodoService{todos: todos, settings: settings}
+func NewTodoService(todos *repository.TodoRepository) *TodoService {
+	return &TodoService{todos: todos}
 }
 
 func (s *TodoService) List() ([]model.Todo, error) {
@@ -32,14 +31,6 @@ func (s *TodoService) Delete(id string) error {
 
 func (s *TodoService) UpdateContent(id string, content string) error {
 	return s.todos.UpdateContent(id, content)
-}
-
-func (s *TodoService) SetShowCompleted(showCompleted string) error {
-	return s.settings.SetShowCompleted(showCompleted)
-}
-
-func (s *TodoService) GetShowCompleted() (string, error) {
-	return s.settings.GetShowCompleted()
 }
 
 func (s *TodoService) UpdatePriority(id string, priority string) (*model.Todo, error) {

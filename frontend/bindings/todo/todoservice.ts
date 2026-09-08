@@ -17,16 +17,8 @@ export function Delete(id: string): $CancellablePromise<void> {
     return $Call.ByID(1271921866, id);
 }
 
-export function GetShowCompleted(): $CancellablePromise<string> {
-    return $Call.ByID(172643551);
-}
-
 export function List(): $CancellablePromise<model$0.Todo[] | null> {
     return $Call.ByID(3842981121);
-}
-
-export function SetShowCompleted(showCompleted: string): $CancellablePromise<void> {
-    return $Call.ByID(2638379787, showCompleted);
 }
 
 export function Toggle(id: string, completed: boolean): $CancellablePromise<void> {

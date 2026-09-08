@@ -30,15 +30,21 @@ func main() {
 	}
 	defer sqlDB.Close()
 
-	todoRepo := repository.NewTodoRepository(db)
-	settingRepo := repository.NewSettingRepository(db)
-	todoService := NewTodoService(todoRepo, settingRepo)
+	todoRepository := repository.NewTodoRepository(db)
+	settingRepository := repository.NewSettingRepository(db)
+	windowRepository := repository.NewWindowRepository(db)
+
+	todoService := NewTodoService(todoRepository)
+	settingService := NewSettingService(settingRepository)
+	windowService := NewWindowService(windowRepository)
 
 	app := application.New(application.Options{
 		Name:        "DesktopTODO",
 		Description: "A demo of using raw HTML & CSS",
 		Services: []application.Service{
 			application.NewService(todoService),
+			application.NewService(settingService),
+			application.NewService(windowService),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -52,17 +58,24 @@ func main() {
 		Title:          "DesktopTODO",
 		Width:          340,
 		Height:         460,
-		MinWidth:       280,
+		AlwaysOnTop:    true,
+		MinWidth:       320,
 		MinHeight:      320,
 		Frameless:      true,
-		AlwaysOnTop:    false,
 		BackgroundType: application.BackgroundTypeTransparent,
 		Windows: application.WindowsWindow{
 			NonClientRegionSupport: true,
 		},
 	})
 
-	window.Center()
+	windowService.AttachWindow(app, window)
+
+	app.OnShutdown(func() {
+		if err := windowService.SaveNow(); err != nil {
+			app.Logger.Error("final window state save failed", "error", err)
+		}
+	})
+
 	window.Show()
 
 	go func() {

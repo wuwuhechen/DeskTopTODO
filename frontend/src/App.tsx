@@ -1,8 +1,14 @@
 import { useState, useEffect } from "react";
+
 import { TodoItem as TodoRow } from "./todo_item";
 import { TodoList } from "./todo_list";
+
 import type { Priority, TodoItem } from "./types";
-import { TodoService } from "../bindings/todo";
+
+import { TodoService, SettingService } from "../bindings/todo";
+
+
+
 import "./App.css";
 
 export default function App() {
@@ -97,7 +103,7 @@ export default function App() {
 
   async function fetchShowCompleted() {
     try {
-      const value = await TodoService.GetShowCompleted();
+      const value = await SettingService.GetShowCompleted();
       setShowCompleted(value);
     } catch (error) {
       console.error(error);
@@ -107,7 +113,7 @@ export default function App() {
   async function toggleShowCompleted() {
     const newValue = showCompleted === "true" ? "false" : "true";
     setShowCompleted(newValue);
-    await TodoService.SetShowCompleted(newValue);
+    await SettingService.SetShowCompleted(newValue);
   }
 
   async function updatePriority(id: string, priority: Priority) {

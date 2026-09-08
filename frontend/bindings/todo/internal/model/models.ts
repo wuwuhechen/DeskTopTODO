@@ -11,3 +11,12 @@ export interface Todo {
     "createdAt": string;
     "updatedAt": string;
 }
+
+export interface WindowState {
+    "x": number;
+    "y": number;
+    "width": number;
+    "height": number;
+    "pinned": boolean;
+    "locked": boolean;
+}
