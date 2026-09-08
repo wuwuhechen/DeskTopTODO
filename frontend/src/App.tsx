@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Events, Window } from "@wailsio/runtime";
 
 import { TodoItem } from "./todo_item";
 import { TodoList } from "./todo_list";
@@ -24,6 +25,8 @@ export default function App() {
   const [isSavingPinned, setIsSavingPinned] = useState(false);
   const [locked, setLocked] = useState<boolean | null>(null);
   const [isSavingLocked, setIsSavingLocked] = useState(false);
+  const [autostartEnabled, setAutostartEnabled] = useState<boolean | null>(null);
+  const [isSavingAutostart, setIsSavingAutostart] = useState(false);
 
   const activeTodos = todos.filter((todo) => !todo.completed);
   const completedTodos = todos.filter((todo) => todo.completed);
@@ -32,6 +35,7 @@ export default function App() {
       ? [...activeTodos, ...completedTodos]
       : activeTodos;
 
+
   useEffect(() => {
     TodoService.List()
       .then((items) => setTodos(items ?? []))
@@ -39,6 +43,17 @@ export default function App() {
 
     fetchShowCompleted().catch(console.error);
     fetchWindowState().catch(console.error);
+    fetchAutostartState().catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = Events.On("autostart-changed", (event) => {
+      if (typeof event.data === "boolean") {
+        setAutostartEnabled(event.data);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   async function addTodo() {
@@ -158,6 +173,28 @@ export default function App() {
     }
   }
 
+  async function fetchAutostartState() {
+    const enabled = await WindowService.IsAutostartEnabled();
+    setAutostartEnabled(enabled);
+  }
+
+  async function toggleAutostart() {
+    if (autostartEnabled === null || isSavingAutostart) return;
+
+    const nextEnabled = !autostartEnabled;
+    setIsSavingAutostart(true);
+
+    try {
+      await WindowService.SetAutostartEnabled(nextEnabled);
+      setAutostartEnabled(nextEnabled);
+    } catch (error) {
+      console.error("更新开机启动状态失败", error);
+      alert("更新开机启动状态失败，请重试");
+    } finally {
+      setIsSavingAutostart(false);
+    }
+  }
+
   async function updatePriority(id: string, priority: Priority) {
     const previousTodos = todos;
 
@@ -182,10 +219,35 @@ export default function App() {
     }
   }
 
+  async function minimiseWindow() {
+    try {
+      await Window.Minimise();
+    } catch (error) {
+      console.error("最小化窗口失败", error);
+    }
+  }
+
+  async function toggleFullscreen() {
+    try {
+      await Window.ToggleFullscreen();
+    } catch (error) {
+      console.error("切换全屏失败", error);
+    }
+  }
+
+  async function closeWindow() {
+    try {
+      // 后端的 WindowClosing hook 会将此操作转换为隐藏到系统托盘。
+      await Window.Close();
+    } catch (error) {
+      console.error("关闭窗口失败", error);
+    }
+  }
+
   return (
     <main className="sticky-note">
       <header className={`note-header${locked ? " is-position-locked" : ""}`}>
-        <div>
+        <div className="note-heading">
           <h1>今天要做什么</h1>
           <span>
             已完成 {todos.filter((todo) => todo.completed).length}/{todos.length}
@@ -195,6 +257,36 @@ export default function App() {
               显示已完成事项后可拖拽排序
             </span>
           )}
+        </div>
+
+        <div className="window-controls" aria-label="窗口控制">
+          <button
+            className="window-control-button"
+            type="button"
+            aria-label="最小化"
+            title="最小化"
+            onClick={minimiseWindow}
+          >
+            <span aria-hidden="true">—</span>
+          </button>
+          <button
+            className="window-control-button"
+            type="button"
+            aria-label="切换全屏"
+            title="切换全屏"
+            onClick={toggleFullscreen}
+          >
+            <span className="fullscreen-icon" aria-hidden="true" />
+          </button>
+          <button
+            className="window-control-button window-close-button"
+            type="button"
+            aria-label="关闭并隐藏到系统托盘"
+            title="关闭并隐藏到系统托盘"
+            onClick={closeWindow}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
         </div>
 
         <div className="header-actions">
@@ -222,6 +314,15 @@ export default function App() {
             onClick={toggleLocked}
           >
             {locked ? "解除锁定" : "锁定位置"}
+          </button>
+          <button
+            className="toggle-autostart-button"
+            type="button"
+            disabled={autostartEnabled === null || isSavingAutostart}
+            aria-pressed={autostartEnabled ?? undefined}
+            onClick={toggleAutostart}
+          >
+            {autostartEnabled ? "关闭开机自启" : "开机自启"}
           </button>
         </div>
       </header>

@@ -20,9 +20,10 @@ const (
 )
 
 type WindowService struct {
-	app      *application.App
-	window   *application.WebviewWindow
-	settings *repository.WindowRepository
+	app           *application.App
+	window        *application.WebviewWindow
+	settings      *repository.WindowRepository
+	autostartItem *application.MenuItem
 
 	timerMu   sync.Mutex
 	saveMu    sync.Mutex
@@ -65,6 +66,11 @@ func (s *WindowService) AttachWindow(
 		_ *application.WindowEvent,
 	) {
 		s.ScheduleSave()
+	})
+
+	window.RegisterHook(events.Common.WindowClosing, func(event *application.WindowEvent) {
+		event.Cancel()
+		window.Hide()
 	})
 }
 
@@ -208,4 +214,80 @@ func clamp(value, lower, upper int) int {
 		return upper
 	}
 	return value
+}
+
+func (s *WindowService) SetupSystemTray() error {
+	tray := s.app.SystemTray.New()
+	tray.SetIcon(logo)
+	tray.SetLabel("DesktopTODO")
+
+	autostart, err := s.IsAutostartEnabled()
+	if err != nil {
+		s.app.Logger.Error("failed to check autostart status", "error", err)
+	}
+
+	menu := s.app.Menu.New()
+
+	autostartItem := menu.AddCheckbox("开机启动", autostart)
+	s.autostartItem = autostartItem
+	autostartItem.OnClick(func(ctx *application.Context) {
+		enabled := ctx.ClickedMenuItem().Checked()
+
+		if err := s.SetAutostartEnabled(enabled); err != nil {
+			s.app.Logger.Error("failed to update autostart status", "error", err)
+
+			actual, statusErr := s.IsAutostartEnabled()
+			if statusErr != nil {
+				s.app.Logger.Error("failed to recheck autostart status", "error", statusErr)
+				actual = !enabled
+			}
+			autostartItem.SetChecked(actual)
+			return
+		}
+
+	})
+
+	menu.Add("显示便签").OnClick(func(ctx *application.Context) {
+		s.window.Show()
+		s.window.Focus()
+	})
+
+	menu.Add("隐藏便签").OnClick(func(ctx *application.Context) {
+		s.window.Hide()
+	})
+
+	menu.AddSeparator()
+
+	menu.Add("退出").OnClick(func(ctx *application.Context) {
+		s.app.Quit()
+	})
+
+	tray.SetMenu(menu)
+	return nil
+}
+
+func (s *WindowService) IsAutostartEnabled() (bool, error) {
+	return s.app.Autostart.IsEnabled()
+}
+
+func (s *WindowService) SetAutostartEnabled(enabled bool) error {
+	var err error
+	if enabled {
+		err = s.app.Autostart.EnableWithOptions(application.AutostartOptions{
+			Identifier: "com.example.desktoptodo",
+			Arguments:  []string{"--hidden"},
+		})
+	} else {
+		err = s.app.Autostart.Disable()
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if s.autostartItem != nil {
+		s.autostartItem.SetChecked(enabled)
+	}
+	s.app.Event.Emit("autostart-changed", enabled)
+	return nil
 }

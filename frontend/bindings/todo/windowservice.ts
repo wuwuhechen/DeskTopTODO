@@ -19,6 +19,10 @@ export function AttachWindow(app: application$0.App | null, window: application$
     return $Call.ByID(2890288284, app, window);
 }
 
+export function IsAutostartEnabled(): $CancellablePromise<boolean> {
+    return $Call.ByID(997869263);
+}
+
 export function IsStateVisible(state: model$0.WindowState | null): $CancellablePromise<boolean> {
     return $Call.ByID(3036489892, state);
 }
@@ -39,10 +43,18 @@ export function ScheduleSave(): $CancellablePromise<void> {
     return $Call.ByID(2911789805);
 }
 
+export function SetAutostartEnabled(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3234795833, enabled);
+}
+
 export function SetLocked(locked: boolean): $CancellablePromise<void> {
     return $Call.ByID(3074266321, locked);
 }
 
 export function SetPinned(pinned: boolean): $CancellablePromise<void> {
     return $Call.ByID(3217312257, pinned);
+}
+
+export function SetupSystemTray(): $CancellablePromise<void> {
+    return $Call.ByID(3915203415);
 }

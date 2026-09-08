@@ -6,6 +6,7 @@ import (
 	"todo/internal/repository"
 
 	"log"
+	"os"
 	"time"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -14,8 +15,21 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed frontend/public/logo.png
+var logo []byte
+
 func init() {
 	application.RegisterEvent[string]("time")
+	application.RegisterEvent[bool]("autostart-changed")
+}
+
+func startHidden() bool {
+	for _, arg := range os.Args[1:] {
+		if arg == "--hidden" {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {
@@ -76,7 +90,13 @@ func main() {
 		}
 	})
 
-	window.Show()
+	windowService.SetupSystemTray()
+
+	if startHidden() {
+		window.Hide()
+	} else {
+		window.Show()
+	}
 
 	go func() {
 		for {
