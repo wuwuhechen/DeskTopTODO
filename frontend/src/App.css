@@ -49,6 +49,10 @@ body {
   font-size: 12px;
 }
 
+.note-header .sorting-hint {
+  color: #9a4b00;
+}
+
 .menu-button,
 input {
   app-region: no-drag;
@@ -79,11 +83,12 @@ input {
 .todo-item {
   app-region: no-drag;
   display: grid;
-  grid-template-columns: 8px 20px minmax(0, 1fr) auto auto;
+  /* 左侧空间专供由 TodoList 覆盖渲染的拖拽把手使用。 */
+  grid-template-columns: 12px 20px minmax(0, 1fr) 84px auto;
   align-items: center;
   gap: 8px;
   min-height: 38px;
-  padding: 6px 7px;
+  padding: 6px 7px 6px 32px;
   border-radius: 9px;
   background: rgb(255 255 255 / 36%);
   transition: background-color 150ms ease, transform 150ms ease;
@@ -110,6 +115,19 @@ input {
   border-color: #5f0b22;
   background: #9f1239;
   box-shadow: 0 0 0 2px rgb(159 18 57 / 22%), 0 1px 2px rgb(69 57 22 / 20%);
+}
+
+/* 完成状态只降低视觉优先级：原 priority 和 sort_order 保持不变。 */
+.todo-item.is-completed .priority-dot {
+  border-color: rgb(69 57 22 / 22%);
+  background: #cba8d6;
+  box-shadow: none;
+}
+
+.todo-item.is-completed .priority-select {
+  color: #8b8167;
+  cursor: default;
+  opacity: 0.72;
 }
 
 .priority-select {
@@ -239,4 +257,27 @@ input:focus {
 
 input::placeholder {
   color: #948660;
+}
+
+.drag-handle {
+  app-region: no-drag;
+  width: 22px;
+  height: 28px;
+  border: 0;
+  padding: 0;
+  color: #988e6f;
+  background: transparent;
+  cursor: grab;
+  font-size: 18px;
+  line-height: 1;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
 }

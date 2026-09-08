@@ -86,9 +86,9 @@ func (r *TodoRepository) Create(content string) (*model.Todo, error) {
 	}
 
 	_, err = tx.Exec(`
-	    INSERT INTO todos (id, content, completed, priority, sort_order, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-	`, todo.ID, todo.Content, 0, todo.Priority, todo.SortOrder, todo.CreatedAt, todo.UpdatedAt)
+	    INSERT INTO todos (id, note_id, content, completed, priority, sort_order, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, todo.ID, todo.NoteID, todo.Content, 0, todo.Priority, todo.SortOrder, todo.CreatedAt, todo.UpdatedAt)
 
 	if err != nil {
 		return &model.Todo{}, err
@@ -211,4 +211,33 @@ func (r *TodoRepository) UpdatePriority(id string, priority string) error {
 	`, priority, time.Now().UTC().Format(time.RFC3339), id)
 
 	return err
+}
+
+func (r *TodoRepository) Recorder(noteID string, ids []string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	for idx, id := range ids {
+		result, err := tx.Exec(`
+			UPDATE todos
+			SET sort_order = ?, updated_at = ?
+			WHERE id = ? AND note_id = ?
+		`, (idx+1)*1000, time.Now().UTC().Format(time.RFC3339), id, noteID)
+		if err != nil {
+			return err
+		}
+
+		affected, err := result.RowsAffected()
+		if err != nil {
+			return err
+		}
+
+		if affected == 0 {
+			return fmt.Errorf("todo with id %s not found for note_id %s", id, noteID)
+		}
+	}
+	return tx.Commit()
 }

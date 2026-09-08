@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { TodoItem as TodoRow } from "./TodoItem";
+import { TodoItem as TodoRow } from "./todo_item";
+import { TodoList } from "./todo_list";
 import type { Priority, TodoItem } from "./types";
 import { TodoService } from "../bindings/todo";
 import "./App.css";
@@ -13,8 +14,14 @@ export default function App() {
 
   const [showCompleted, setShowCompleted] = useState("false");
 
+  // 完成状态只影响展示分组，不修改保存的拖拽排序值。
+  // 未完成事项保持既有顺序，完成事项同样保留彼此间的既有顺序。
+  const activeTodos = todos.filter((todo) => !todo.completed);
+  const completedTodos = todos.filter((todo) => todo.completed);
   const visibleTodos =
-    showCompleted === "true" ? todos : todos.filter((todo) => !todo.completed);
+    showCompleted === "true"
+      ? [...activeTodos, ...completedTodos]
+      : activeTodos;
 
   useEffect(() => {
     TodoService.List()
@@ -127,6 +134,11 @@ export default function App() {
           <span>
             已完成 {todos.filter((todo) => todo.completed).length}/{todos.length}
           </span>
+          {showCompleted !== "true" && (
+            <span className="sorting-hint" role="status">
+              显示已完成事项后可拖拽排序
+            </span>
+          )}
         </div>
 
         <button
@@ -138,8 +150,12 @@ export default function App() {
         </button>
       </header>
 
-      <section className="todo-list">
-        {visibleTodos.map((todo) => (
+      <TodoList
+        noteID={todos[0]?.noteId ?? "1"}
+        todos={visibleTodos}
+        setTodos={setTodos}
+        sortingEnabled={showCompleted === "true"}
+        renderTodo={(todo) => (
           <TodoRow
             key={todo.id}
             todo={todo}
@@ -153,8 +169,8 @@ export default function App() {
             onDelete={deleteTodo}
             onPriorityChange={updatePriority}
           />
-        ))}
-      </section>
+        )}
+      />
 
       <footer>
         <input

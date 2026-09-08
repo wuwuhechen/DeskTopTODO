@@ -40,3 +40,7 @@ export function UpdateContent(id: string, content: string): $CancellablePromise<
 export function UpdatePriority(id: string, priority: string): $CancellablePromise<void> {
     return $Call.ByID(3834533180, id, priority);
 }
+
+export function UpdateSortOrder(noteID: string, ids: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(3059321672, noteID, ids);
+}

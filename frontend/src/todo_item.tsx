@@ -33,7 +33,11 @@ export function TodoItem({
   onPriorityChange,
 }: Props) {
   return (
-    <article className={`todo-item priority-${todo.priority}`}>
+    <article
+      className={`todo-item priority-${todo.priority} ${
+        todo.completed ? "is-completed" : ""
+      }`}
+    >
       <span
         className="priority-dot"
         title={`优先级：${priorityLabels[todo.priority]}`}
@@ -73,7 +77,9 @@ export function TodoItem({
       <select
         className="priority-select"
         aria-label="选择待办优先级"
-        value={todo.priority}
+        value={todo.completed ? "normal" : todo.priority}
+        disabled={todo.completed}
+        title={todo.completed ? "已完成事项显示为无优先级" : undefined}
         onChange={(event) =>
           void onPriorityChange(todo.id, event.target.value as Priority)
         }

@@ -3,6 +3,7 @@
 
 export interface Todo {
     "id": string;
+    "noteId": string;
     "content": string;
     "completed": boolean;
     "priority": string;

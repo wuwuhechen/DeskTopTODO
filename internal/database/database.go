@@ -78,6 +78,15 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 
+	if err := addColumnIfMissing(
+		db,
+		"todos",
+		"note_id",
+		"TEXT NOT NULL DEFAULT '1'",
+	); err != nil {
+		return err
+	}
+
 	return addColumnIfMissing(
 		db,
 		"todos",

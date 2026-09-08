@@ -44,3 +44,7 @@ func (s *TodoService) GetShowCompleted() (string, error) {
 func (s *TodoService) UpdatePriority(id string, priority string) error {
 	return s.repo.UpdatePriority(id, priority)
 }
+
+func (s *TodoService) UpdateSortOrder(noteID string, ids []string) error {
+	return s.repo.Recorder(noteID, ids)
+}
