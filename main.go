@@ -24,10 +24,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer sqlDB.Close()
 
 	todoRepo := repository.NewTodoRepository(db)
-	todoService := NewTodoService(todoRepo)
+	settingRepo := repository.NewSettingRepository(db)
+	todoService := NewTodoService(todoRepo, settingRepo)
 
 	app := application.New(application.Options{
 		Name:        "DesktopTODO",

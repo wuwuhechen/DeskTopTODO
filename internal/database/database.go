@@ -1,119 +1,76 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
+	"todo/internal/model"
 
-	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func Open() (*sql.DB, error) {
+func Open() (*gorm.DB, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user config directory: %v", err)
+		return nil, fmt.Errorf("failed to get user config directory: %w", err)
 	}
 
 	appDir := filepath.Join(configDir, "DesktopTodo")
 	if err := os.MkdirAll(appDir, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create app directory: %v", err)
+		return nil, fmt.Errorf("failed to create app directory: %w", err)
 	}
 
 	dbPath := filepath.Join(appDir, "todo.db")
-	db, err := sql.Open("sqlite3", dbPath)
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Error),
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %v", err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	if err := db.Ping(); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("连接数据库失败: %w", err)
+	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
+		return nil, fmt.Errorf("failed to enable foreign keys: %w", err)
 	}
-
-	if _, err := db.Exec(`PRAGMA foreign_keys = ON`); err != nil {
-		db.Close()
-		return nil, err
-	}
-
 	if err := migrate(db); err != nil {
-		db.Close()
-		return nil, err
+		return nil, fmt.Errorf("failed to migrate database: %w", err)
 	}
 
+	defaultSetting := model.Setting{Key: "show_completed", Value: "false"}
+	if err := db.Where("key = ?", defaultSetting.Key).FirstOrCreate(&defaultSetting).Error; err != nil {
+		return nil, fmt.Errorf("failed to initialise settings: %w", err)
+	}
 	return db, nil
 }
 
-func migrate(db *sql.DB) error {
-	_, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS todos (
-			id TEXT PRIMARY KEY,
-			content TEXT NOT NULL,
-			completed BOOLEAN NOT NULL DEFAULT 0,
-			sort_order INTEGER NOT NULL,
-			created_at TEXT NOT NULL,
-			priority TEXT NOT NULL DEFAULT 'normal',
-			updated_at TEXT NOT NULL DEFAULT ''
-		);
+func migrate(db *gorm.DB) error {
+	migrator := db.Migrator()
 
-		CREATE INDEX IF NOT EXISTS idx_todos_sort_order ON todos (sort_order);
-
-		CREATE TABLE IF NOT EXISTS settings (
-			key TEXT PRIMARY KEY,
-			value TEXT NOT NULL
-		);
-
-		INSERT OR IGNORE INTO settings (key, value) VALUES ('show_completed', 'false');
-	`)
-	if err != nil {
-		return err
+	if !migrator.HasTable(&model.Todo{}) {
+		if err := migrator.CreateTable(&model.Todo{}); err != nil {
+			return err
+		}
+	} else {
+		for _, field := range []string{"NoteID", "Priority", "UpdatedAt"} {
+			if !migrator.HasColumn(&model.Todo{}, field) {
+				if err := migrator.AddColumn(&model.Todo{}, field); err != nil {
+					return err
+				}
+			}
+		}
 	}
 
-	if err := addColumnIfMissing(
-		db,
-		"todos",
-		"priority",
-		"TEXT NOT NULL DEFAULT 'normal'",
-	); err != nil {
-		return err
-	}
-
-	if err := addColumnIfMissing(
-		db,
-		"todos",
-		"note_id",
-		"TEXT NOT NULL DEFAULT '1'",
-	); err != nil {
-		return err
-	}
-
-	return addColumnIfMissing(
-		db,
-		"todos",
-		"updated_at",
-		"TEXT NOT NULL DEFAULT ''",
-	)
-}
-
-func addColumnIfMissing(db *sql.DB, tableName, columnName, columnDefinition string) error {
-	var count int
-	err := db.QueryRow(`
-		SELECT COUNT(*)
-		FROM pragma_table_info(?)
-		WHERE name = ?
-	`, tableName, columnName).Scan(&count)
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		_, err := db.Exec(fmt.Sprintf(`
-			ALTER TABLE %s ADD COLUMN %s %s
-		`, tableName, columnName, columnDefinition))
-		if err != nil {
+	if !migrator.HasIndex(&model.Todo{}, "idx_todos_sort_order") {
+		if err := migrator.CreateIndex(&model.Todo{}, "SortOrder"); err != nil {
 			return err
 		}
 	}
 
+	if !migrator.HasTable(&model.Setting{}) {
+		if err := migrator.CreateTable(&model.Setting{}); err != nil {
+			return err
+		}
+	}
 	return nil
 }

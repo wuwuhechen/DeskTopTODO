@@ -27,7 +27,7 @@ tasks:
           OBFUSCATED: '{{.OBFUSCATED}}'
           GARBLE_ARGS: '{{.GARBLE_ARGS}}'
     vars:
-      # This project uses github.com/mattn/go-sqlite3, which requires CGO.
+      # GORM's SQLite driver uses go-sqlite3 and requires CGO.
       CGO_ENABLED: '{{.CGO_ENABLED | default "1"}}'
 
   build:native:

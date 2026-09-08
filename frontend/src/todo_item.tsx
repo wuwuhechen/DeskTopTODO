@@ -77,9 +77,7 @@ export function TodoItem({
       <select
         className="priority-select"
         aria-label="选择待办优先级"
-        value={todo.completed ? "normal" : todo.priority}
-        disabled={todo.completed}
-        title={todo.completed ? "已完成事项显示为无优先级" : undefined}
+        value={todo.priority}
         onChange={(event) =>
           void onPriorityChange(todo.id, event.target.value as Priority)
         }

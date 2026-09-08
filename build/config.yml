@@ -52,11 +52,17 @@ dev_mode:
       - "*.ts" # The frontend directory will be excluded entirely by the setting above.
     git_ignore: true
   executes:
-    # go-sqlite3 requires CGO; pass this through to the Windows Taskfile.
-    - cmd: wails3 build DEV=true CGO_ENABLED=1
-      type: blocking
+    # Install dependencies before Vite is launched. Otherwise its first-run
+    # install can outlast the desktop app's frontend-server connection timeout.
+    - cmd: wails3 task common:install:frontend:deps
+      type: once
     - cmd: wails3 task common:dev:frontend
       type: background
+    # Keep this blocking build after Vite starts so the frontend server has time
+    # to bind to port 9245 before the desktop process connects to it.
+    # GORM's SQLite driver requires CGO; pass this through to the Windows Taskfile.
+    - cmd: wails3 build DEV=true CGO_ENABLED=1
+      type: blocking
     - cmd: wails3 task run
       type: primary
 

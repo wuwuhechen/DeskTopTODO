@@ -37,7 +37,7 @@ export function UpdateContent(id: string, content: string): $CancellablePromise<
     return $Call.ByID(781007425, id, content);
 }
 
-export function UpdatePriority(id: string, priority: string): $CancellablePromise<void> {
+export function UpdatePriority(id: string, priority: string): $CancellablePromise<model$0.Todo | null> {
     return $Call.ByID(3834533180, id, priority);
 }
 

@@ -117,16 +117,13 @@ input {
   box-shadow: 0 0 0 2px rgb(159 18 57 / 22%), 0 1px 2px rgb(69 57 22 / 20%);
 }
 
-/* 完成状态只降低视觉优先级：原 priority 和 sort_order 保持不变。 */
+/* 完成状态只降低文本视觉权重；优先级颜色仍保留。 */
 .todo-item.is-completed .priority-dot {
-  border-color: rgb(69 57 22 / 22%);
-  background: #cba8d6;
-  box-shadow: none;
+  opacity: 0.72;
 }
 
 .todo-item.is-completed .priority-select {
   color: #8b8167;
-  cursor: default;
   opacity: 0.72;
 }
 

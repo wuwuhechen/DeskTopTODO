@@ -6,45 +6,46 @@ import (
 )
 
 type TodoService struct {
-	repo *repository.TodoRepository
+	todos    *repository.TodoRepository
+	settings *repository.SettingRepository
 }
 
-func NewTodoService(repo *repository.TodoRepository) *TodoService {
-	return &TodoService{repo: repo}
+func NewTodoService(todos *repository.TodoRepository, settings *repository.SettingRepository) *TodoService {
+	return &TodoService{todos: todos, settings: settings}
 }
 
 func (s *TodoService) List() ([]model.Todo, error) {
-	return s.repo.List()
+	return s.todos.List()
 }
 
 func (s *TodoService) Create(content string) (*model.Todo, error) {
-	return s.repo.Create(content)
+	return s.todos.Create(content)
 }
 
 func (s *TodoService) Toggle(id string, completed bool) error {
-	return s.repo.SetCompleted(id, completed)
+	return s.todos.SetCompleted(id, completed)
 }
 
 func (s *TodoService) Delete(id string) error {
-	return s.repo.Delete(id)
+	return s.todos.Delete(id)
 }
 
 func (s *TodoService) UpdateContent(id string, content string) error {
-	return s.repo.UpdateContent(id, content)
+	return s.todos.UpdateContent(id, content)
 }
 
 func (s *TodoService) SetShowCompleted(showCompleted string) error {
-	return s.repo.SetShowCompleted(showCompleted)
+	return s.settings.SetShowCompleted(showCompleted)
 }
 
 func (s *TodoService) GetShowCompleted() (string, error) {
-	return s.repo.GetShowCompleted()
+	return s.settings.GetShowCompleted()
 }
 
-func (s *TodoService) UpdatePriority(id string, priority string) error {
-	return s.repo.UpdatePriority(id, priority)
+func (s *TodoService) UpdatePriority(id string, priority string) (*model.Todo, error) {
+	return s.todos.UpdatePriority(id, priority)
 }
 
 func (s *TodoService) UpdateSortOrder(noteID string, ids []string) error {
-	return s.repo.Recorder(noteID, ids)
+	return s.todos.Recorder(noteID, ids)
 }

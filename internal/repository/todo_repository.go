@@ -1,243 +1,136 @@
 package repository
 
 import (
-	"database/sql"
 	"fmt"
+	"log"
 	"strings"
 	"time"
 	"todo/internal/model"
 	"unicode/utf8"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type TodoRepository struct {
-	db *sql.DB
+	db *gorm.DB
 }
 
-func NewTodoRepository(db *sql.DB) *TodoRepository {
+func NewTodoRepository(db *gorm.DB) *TodoRepository {
 	return &TodoRepository{db: db}
 }
 
 func (r *TodoRepository) List() ([]model.Todo, error) {
-	rows, err := r.db.Query(`
-	     SELECT id, content, completed, priority, sort_order, created_at, updated_at
-		 FROM todos
-		 ORDER BY sort_order ASC, created_at ASC
-	`)
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	todos := make([]model.Todo, 0)
-
-	for rows.Next() {
-		var todo model.Todo
-		var completed bool
-
-		if err := rows.Scan(
-			&todo.ID,
-			&todo.Content,
-			&completed,
-			&todo.Priority,
-			&todo.SortOrder,
-			&todo.CreatedAt,
-			&todo.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-
-		todo.Completed = completed
-		todos = append(todos, todo)
-	}
-
-	return todos, rows.Err()
+	var todos []model.Todo
+	err := r.db.
+		Order(`CASE priority
+			WHEN 'high' THEN 1
+			WHEN 'medium' THEN 2
+			WHEN 'low' THEN 3
+			WHEN 'normal' THEN 4
+			ELSE 5
+		END ASC`).
+		Order("sort_order ASC").
+		Order("created_at ASC").
+		Find(&todos).Error
+	return todos, err
 }
 
 func (r *TodoRepository) Create(content string) (*model.Todo, error) {
 	content = strings.TrimSpace(content)
 	if content == "" {
-		return &model.Todo{}, fmt.Errorf("content cannot be empty")
+		return nil, fmt.Errorf("content cannot be empty")
 	}
-
-	tx, err := r.db.Begin()
-	if err != nil {
-		return &model.Todo{}, err
-	}
-	defer tx.Rollback()
-
-	var nextOrder int
-	if err := tx.QueryRow(`
-		SELECT COALESCE(MAX(sort_order), -1) + 1 FROM todos
-	`).Scan(&nextOrder); err != nil {
-		return &model.Todo{}, err
-	} // TODO
 
 	todo := &model.Todo{
-		ID:        uuid.New().String(),
-		Content:   content,
-		Completed: false,
-		Priority:  "normal",
-		SortOrder: nextOrder,
+		ID: uuid.NewString(), NoteID: "1", Content: content, Priority: "normal",
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		UpdatedAt: "",
 	}
-
-	_, err = tx.Exec(`
-	    INSERT INTO todos (id, note_id, content, completed, priority, sort_order, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, todo.ID, todo.NoteID, todo.Content, 0, todo.Priority, todo.SortOrder, todo.CreatedAt, todo.UpdatedAt)
-
+	err := r.db.Transaction(func(tx *gorm.DB) error {
+		var maxOrder int
+		if err := tx.Model(&model.Todo{}).Select("COALESCE(MAX(sort_order), -1)").Scan(&maxOrder).Error; err != nil {
+			return err
+		}
+		todo.SortOrder = maxOrder + 1
+		return tx.Create(todo).Error
+	})
 	if err != nil {
-		return &model.Todo{}, err
+		return nil, err
 	}
-
-	if err := tx.Commit(); err != nil {
-		return &model.Todo{}, err
-	}
-
 	return todo, nil
 }
 
 func (r *TodoRepository) SetCompleted(id string, completed bool) error {
-	result, err := r.db.Exec(`
-		UPDATE todos
-		SET completed = ?
-		WHERE id = ?
-	`, completed, id)
-	if err != nil {
-		return err
-	}
-
-	count, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		return fmt.Errorf("todo with id %s not found", id)
-	}
-	return nil
+	return r.requireTodo(r.db.Model(&model.Todo{}).Where("id = ?", id).Update("completed", completed), id)
 }
 
 func (r *TodoRepository) Delete(id string) error {
-	result, err := r.db.Exec(`
-		DELETE FROM todos
-		WHERE id = ?
-	`, id)
-	if err != nil {
-		return err
-	}
-
-	count, err := result.RowsAffected()
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		return fmt.Errorf("todo with id %s not found", id)
-	}
-	return nil
+	return r.requireTodo(r.db.Delete(&model.Todo{}, "id = ?", id), id)
 }
 
-func (r *TodoRepository) UpdateContent(id string, content string) error {
+func (r *TodoRepository) UpdateContent(id, content string) error {
 	content = strings.TrimSpace(content)
 	if content == "" {
 		return fmt.Errorf("content cannot be empty")
 	}
-
 	if utf8.RuneCountInString(content) > 500 {
 		return fmt.Errorf("content cannot exceed 500 characters")
 	}
-
-	_, err := r.db.Exec(`
-		UPDATE todos
-		SET content = ?, updated_at = ?
-		WHERE id = ?
-	`, content, time.Now().UTC().Format(time.RFC3339), id)
-
-	return err
+	return r.requireTodo(r.db.Model(&model.Todo{}).Where("id = ?", id).Updates(map[string]any{
+		"content": content, "updated_at": time.Now().UTC().Format(time.RFC3339),
+	}), id)
 }
 
-func (r *TodoRepository) SetShowCompleted(showCompleted string) error {
-	var count int
-	err := r.db.QueryRow(`
-		SELECT COUNT(*) FROM settings WHERE key = 'show_completed'
-	`).Scan(&count)
-
-	if err != nil {
-		return err
-	}
-
-	if count == 0 {
-		_, err = r.db.Exec(`
-			INSERT INTO settings (key, value) VALUES ('show_completed', ?)
-		`, showCompleted)
-	} else {
-		_, err = r.db.Exec(`
-			UPDATE settings SET value = ? WHERE key = 'show_completed'
-		`, showCompleted)
-	}
-
-	return err
-}
-
-func (r *TodoRepository) GetShowCompleted() (string, error) {
-	var value string
-	err := r.db.QueryRow(`
-		SELECT value FROM settings WHERE key = 'show_completed'
-	`).Scan(&value)
-
-	if err != nil {
-		return "", err
-	}
-
-	return value, nil
-}
-
-func (r *TodoRepository) UpdatePriority(id string, priority string) error {
+func (r *TodoRepository) UpdatePriority(id, priority string) (*model.Todo, error) {
 	switch priority {
 	case "normal", "low", "medium", "high":
 	default:
-		return fmt.Errorf("invalid priority value: %s", priority)
+		return nil, fmt.Errorf("invalid priority value: %s", priority)
 	}
 
-	_, err := r.db.Exec(`
-		UPDATE todos
-		SET priority = ?, updated_at = ?
-		WHERE id = ?
-	`, priority, time.Now().UTC().Format(time.RFC3339), id)
+	log.Printf("Updating priority for todo ID %s to %s", id, priority)
 
-	return err
+	result := r.db.Model(&model.Todo{}).Where("id = ?", id).Updates(map[string]any{
+		"priority": priority, "updated_at": time.Now().UTC().Format(time.RFC3339),
+	})
+	if err := r.requireTodo(result, id); err != nil {
+		log.Printf("Priority update failed for todo ID %s: %v", id, err)
+		return nil, err
+	}
+
+	var todo model.Todo
+	if err := r.db.First(&todo, "id = ?", id).Error; err != nil {
+		log.Printf("Priority update read-back failed for todo ID %s: %v", id, err)
+		return nil, err
+	}
+	log.Printf("Priority update persisted for todo ID %s: priority=%s updated_at=%s", todo.ID, todo.Priority, todo.UpdatedAt)
+	return &todo, nil
 }
 
 func (r *TodoRepository) Recorder(noteID string, ids []string) error {
-	tx, err := r.db.Begin()
-	if err != nil {
-		return err
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		for idx, id := range ids {
+			result := tx.Model(&model.Todo{}).Where("id = ? AND note_id = ?", id, noteID).Updates(map[string]any{
+				"sort_order": (idx + 1) * 1000,
+				"updated_at": time.Now().UTC().Format(time.RFC3339),
+			})
+			if result.Error != nil {
+				return result.Error
+			}
+			if result.RowsAffected == 0 {
+				return fmt.Errorf("todo with id %s not found for note_id %s", id, noteID)
+			}
+		}
+		return nil
+	})
+}
+
+func (r *TodoRepository) requireTodo(result *gorm.DB, id string) error {
+	if result.Error != nil {
+		return result.Error
 	}
-	defer tx.Rollback()
-
-	for idx, id := range ids {
-		result, err := tx.Exec(`
-			UPDATE todos
-			SET sort_order = ?, updated_at = ?
-			WHERE id = ? AND note_id = ?
-		`, (idx+1)*1000, time.Now().UTC().Format(time.RFC3339), id, noteID)
-		if err != nil {
-			return err
-		}
-
-		affected, err := result.RowsAffected()
-		if err != nil {
-			return err
-		}
-
-		if affected == 0 {
-			return fmt.Errorf("todo with id %s not found for note_id %s", id, noteID)
-		}
+	if result.RowsAffected == 0 {
+		return fmt.Errorf("todo with id %s not found", id)
 	}
-	return tx.Commit()
+	return nil
 }

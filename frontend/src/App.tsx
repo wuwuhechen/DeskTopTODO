@@ -122,8 +122,16 @@ export default function App() {
     } catch (error) {
       setTodos(previousTodos);
       alert("更新优先级失败，请重试");
+      return;
     }
 
+    try {
+      const latestTodos = await TodoService.List();
+      setTodos(latestTodos ?? []);
+    } catch (error) {
+      // 优先级已保存；刷新失败时保留乐观更新，等待下次读取恢复同步。
+      console.error("刷新待办列表失败", error);
+    }
   }
 
   return (
