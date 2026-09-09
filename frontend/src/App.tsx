@@ -16,6 +16,7 @@ import "./App.css";
 export default function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [content, setContent] = useState<string>("");
+  const [windowFocused, setWindowFocused] = useState(() => document.hasFocus());
 
   const [editingID, setEditingID] = useState<string | null>(null);
   const [draft, setDraft] = useState<string>("");
@@ -54,6 +55,16 @@ export default function App() {
     });
 
     return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const unsubscribeFocus = Events.On("common:WindowFocus", () => setWindowFocused(true));
+    const unsubscribeLostFocus = Events.On("common:WindowLostFocus", () => setWindowFocused(false));
+
+    return () => {
+      unsubscribeFocus();
+      unsubscribeLostFocus();
+    };
   }, []);
 
   async function addTodo() {
@@ -245,7 +256,7 @@ export default function App() {
   }
 
   return (
-    <main className="sticky-note">
+    <main className={`sticky-note${windowFocused ? "" : " is-inactive"}`}>
       <header className={`note-header${locked ? " is-position-locked" : ""}`}>
         <div className="note-heading">
           <h1>今天要做什么</h1>

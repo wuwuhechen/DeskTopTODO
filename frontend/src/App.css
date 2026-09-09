@@ -50,6 +50,15 @@ body {
   -webkit-backdrop-filter: blur(14px) saturate(106%) brightness(1.04);
 }
 
+/* 仅在失焦时叠加暖粉色，抵消 Windows Acrylic 的冷灰失焦底色。 */
+.sticky-note.is-inactive {
+  background: linear-gradient(
+    145deg,
+    rgb(255 218 231 / 28%),
+    rgb(250 213 237 / 22%)
+  ), var(--glass-surface);
+}
+
 .note-header {
   app-region: drag;
   display: grid;
